@@ -1,0 +1,252 @@
+// Lumière schema — Neon Postgres + pgvector.
+// Embeddings live in `vector(1536)` columns (Unsupported type), queried via
+// raw SQL in src/features/search/queries.ts.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ---------- Auth (Auth.js standard models) ----------
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // credentials login; null for OAuth-only users
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+
+  accounts      Account[]
+  interactions  Interaction[]
+  ratings       Rating[]
+  watchlist     WatchlistItem[]
+  collections   Collection[]
+  tasteProfile  TasteProfile?
+  conversations Conversation[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- Catalog ----------
+
+model Movie {
+  id             Int      @id // TMDB id (or curated id in mock mode)
+  title          String
+  overview       String
+  posterPath     String?
+  backdropPath   String?
+  releaseDate    String // ISO yyyy-mm-dd; string keeps partial dates safe
+  runtime        Int?
+  tagline        String?
+  budget         BigInt   @default(0)
+  revenue        BigInt   @default(0)
+  language       String   @default("en")
+  voteAverage    Float    @default(0)
+  popularity     Float    @default(0)
+  genres         Json     @default("[]") // Genre[]
+  cast           Json     @default("[]") // CastMember[]
+  crew           Json     @default("[]") // CrewMember[]
+  keywords       Json     @default("[]") // string[]
+  awards         Json     @default("[]") // string[]
+  trailerKey     String?
+  watchProviders Json     @default("[]") // WatchProvider[]
+  updatedAt      DateTime @updatedAt
+
+  embedding Unsupported("vector(1536)")?
+
+  interactions    Interaction[]
+  ratings         Rating[]
+  watchlistItems  WatchlistItem[]
+  collectionItems CollectionItem[]
+  reviewSummary   ReviewSummary?
+}
+
+// ---------- User activity ----------
+
+enum InteractionType {
+  LIKE
+  DISLIKE
+  VIEW
+}
+
+model Interaction {
+  id        String          @id @default(cuid())
+  userId    String
+  movieId   Int
+  type      InteractionType
+  createdAt DateTime        @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId, type])
+  @@index([userId, type])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  movieId   Int
+  value     Int // 1–10
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([userId])
+}
+
+enum WatchStatus {
+  PLANNED
+  WATCHING
+  WATCHED
+}
+
+model WatchlistItem {
+  id        String      @id @default(cuid())
+  userId    String
+  movieId   Int
+  status    WatchStatus @default(PLANNED)
+  addedAt   DateTime    @default(now())
+  watchedAt DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([userId, status])
+}
+
+// ---------- Collections ----------
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String? // null => site collection (smart/featured)
+  name        String
+  slug        String   @unique
+  description String?
+  isSmart     Boolean  @default(false) // AI-generated
+  isFeatured  Boolean  @default(false) // shown on home / managed by admin
+  createdAt   DateTime @default(now())
+
+  user  User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CollectionItem[]
+
+  @@index([userId])
+}
+
+model CollectionItem {
+  id           String  @id @default(cuid())
+  collectionId String
+  movieId      Int
+  position     Int     @default(0)
+  reason       String? // AI's "why this belongs here"
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  movie      Movie      @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, movieId])
+}
+
+// ---------- Personalization ----------
+
+model TasteProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  genreWeights Json     @default("{}") // { genreName: 0..1 }
+  favoriteActors Json   @default("[]") // string[]
+  languages    Json     @default("[]") // string[]
+  summary      String? // AI-written portrait
+  updatedAt    DateTime @updatedAt
+
+  tasteVector Unsupported("vector(1536)")?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Chat ----------
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("New conversation")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+}
+
+model Message {
+  id              String      @id @default(cuid())
+  conversationId  String
+  role            MessageRole
+  content         String
+  recommendations Json        @default("[]") // Recommendation[]
+  createdAt       DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+// ---------- AI artifacts ----------
+
+model ReviewSummary {
+  id          String   @id @default(cuid())
+  movieId     Int      @unique
+  pros        Json     @default("[]") // string[]
+  cons        Json     @default("[]") // string[]
+  verdict     String
+  generatedAt DateTime @default(now())
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+}
