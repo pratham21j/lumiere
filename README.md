@@ -1,39 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lumière
 
-## Getting Started
+Lumière is an AI-powered entertainment discovery platform built with Next.js 15, TypeScript, Tailwind, shadcn/ui, Prisma, Neon Postgres, Auth.js, and a premium movie discovery experience.
 
-First, run the development server:
+## What’s included
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Polished marketing experience with responsive layouts and a dark premium UI
+- Movie discovery rails: trending, popular, top-rated, upcoming, and search
+- AI chat assistant with grounded recommendations and explanation
+- Watchlist, collections, ratings, and personalized dashboard
+- Production-ready structure with logging, rate limiting, and resilient fallbacks
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Phase 5 & 6 milestone
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The current workspace includes the Phase 5 personalization experience and Phase 6 production hardening work:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Personalized dashboard with taste profile insights
+- Recent activity and watchlist/collection summaries
+- AI-guided recommendations based on your interaction history
+- Loading and error states for the dashboard experience
+- Global fallback pages for unexpected errors and missing routes
 
-## Learn More
+## Screenshots
 
-To learn more about Next.js, take a look at the following resources:
+![Landing hero](shots/landing-hero.png)
+![Browse experience](shots/p2-home.png)
+![Movie detail experience](shots/p2-details-top.png)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Local development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Install dependencies
 
-## Deploy on Vercel
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. Set up the environment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   cp .env.example .env.local
+   ```
 
-# lumiere
-An AI-powered entertainment discovery platform built with Next.js 15, TypeScript, PostgreSQL, pgvector, and OpenAI. Features semantic search, personalized recommendations, AI chat, watchlists, and modern production-grade architecture.
+3. Run database migrations and seed data
+
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+4. Start the app
+   ```bash
+   npm run dev
+   ```
+
+## Scripts
+
+- `npm run dev` – start the local dev server
+- `npm run build` – create a production build
+- `npm run lint` – run ESLint
+- `npm run test` – run Vitest tests
+
+## Architecture highlights
+
+- Feature-based organization under src/features
+- Prisma models for users, movies, watchlists, collections, and taste profiles
+- Provider-based movie and AI abstraction for easy swap-in of TMDB/OpenAI implementations

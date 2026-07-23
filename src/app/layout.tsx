@@ -6,6 +6,7 @@ import {
 } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { SITE } from "@/lib/site";
+import { buildSecurityHeaders } from "@/lib/security";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({
@@ -41,15 +42,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headers = buildSecurityHeaders();
+
   return (
     <html
       lang="en"
       className={`dark ${display.variable} ${body.variable} ${data.variable}`}
     >
       <body className="min-h-dvh">
+        <div style={{ display: "none" }} data-security-headers={JSON.stringify(headers)} />
         {children}
         <Toaster position="bottom-right" />
       </body>
     </html>
   );
 }
+
+export const dynamic = "force-dynamic";
