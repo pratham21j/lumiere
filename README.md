@@ -382,8 +382,8 @@ This project is licensed under the MIT License.
 
 **Pratham Jain**
 
-- GitHub: https://github.com/pratham21j
-- LinkedIn: https://www.linkedin.com/in/pratham-jain-ba3b1a36b/
+- GitHub: https://github.com/YOUR_USERNAME
+- LinkedIn:www.linkedin.com/in/prathamjdev
 - Portfolio: https://YOUR_PORTFOLIO
 
 ---
