@@ -4,11 +4,20 @@
  *
  * Run: npx prisma db seed   (configured in package.json)
  */
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+dotenv.config();
 import { PrismaClient, Prisma } from "@prisma/client";
 import { MOCK_CATALOG } from "../src/lib/providers/movie/mock-catalog";
 import { mockEmbed, movieEmbeddingText } from "../src/lib/providers/ai/mock-embeddings";
 
-const prisma = new PrismaClient();
+let prisma: PrismaClient | null = null;
+
+// Fail fast with a clearer message if DATABASE_URL is not provided.
+if (!process.env.DATABASE_URL) {
+  console.error("Environment variable DATABASE_URL not set.\nCreate a .env.local with DATABASE_URL set to your Postgres connection string — see README.md for details.");
+  process.exit(1);
+}
 
 const SMART_COLLECTIONS: {
   name: string;
@@ -66,6 +75,7 @@ function vectorLiteral(v: number[]): string {
 }
 
 async function main() {
+  prisma = new PrismaClient();
   console.log(`Seeding ${MOCK_CATALOG.length} movies…`);
 
   for (const m of MOCK_CATALOG) {
