@@ -383,7 +383,7 @@ This project is licensed under the MIT License.
 **Pratham Jain**
 
 - GitHub: https://github.com/YOUR_USERNAME
-- LinkedIn: https://linkedin.com/in/YOUR_LINKEDIN
+- LinkedIn:www.linkedin.com/in/prathamjdev
 - Portfolio: https://YOUR_PORTFOLIO
 
 ---
